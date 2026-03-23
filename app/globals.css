@@ -1,0 +1,152 @@
+/* Pretendard via CDN — @import must come before @tailwind */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary:     #111111;
+  --bg-secondary:   #1A1A1A;
+  --bg-surface:     #222222;
+  --text-primary:   #FFFFFF;
+  --text-secondary: #AAAAAA;
+  --text-muted:     #555555;
+  --border:         #333333;
+  --gold:           #B8860B;
+  --blue:           #007AFF;
+
+  --font-body: "PretendardVariable", "Inter", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 스크롤바 다크 스타일 */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+::-webkit-scrollbar-thumb {
+  background: #333333;
+  border-radius: 2px;
+}
+
+/* 페이드인 애니메이션 */
+@keyframes obFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ob-fade-in {
+  animation: obFadeIn 0.5s ease-out forwards;
+}
+
+/* 집중 종료 시 화면 전체 미세 펄스 */
+@keyframes obScreenPulse {
+  0%   { opacity: 0; }
+  20%  { opacity: 0.055; }
+  60%  { opacity: 0.02; }
+  100% { opacity: 0; }
+}
+.ob-pulse { animation: obScreenPulse 0.9s ease-out forwards; }
+
+/* ── 25분 집중 완료 금빛 광채 폭발 ── */
+@keyframes obGoldenBg {
+  0%   { opacity: 0; }
+  8%   { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+.ob-golden-bg { animation: obGoldenBg 3.8s ease-in-out forwards; }
+
+@keyframes obGoldenCore {
+  0%   { transform: scale(0);   opacity: 0; }
+  12%  { transform: scale(1);   opacity: 1; }
+  65%  { transform: scale(2.4); opacity: 0.8; }
+  100% { transform: scale(4);   opacity: 0; }
+}
+.ob-golden-core {
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 235, 90, 0.98) 0%,
+    rgba(255, 190, 20, 0.65) 28%,
+    rgba(220, 130,  0, 0.30) 55%,
+    transparent 78%
+  );
+  animation: obGoldenCore 3.8s cubic-bezier(0.1, 0.7, 0.3, 1) forwards;
+}
+
+@keyframes obGoldenRing {
+  0%   { transform: scale(0.1); opacity: 0.9; }
+  100% { transform: scale(4.5); opacity: 0; }
+}
+.ob-golden-ring-1 {
+  position: absolute;
+  width: 280px; height: 280px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 218, 0, 0.75);
+  animation: obGoldenRing 2.2s cubic-bezier(0.05, 0.6, 0.2, 1) 0.08s forwards;
+}
+.ob-golden-ring-2 {
+  position: absolute;
+  width: 280px; height: 280px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 200, 0, 0.45);
+  animation: obGoldenRing 2.9s cubic-bezier(0.05, 0.6, 0.2, 1) 0.28s forwards;
+}
+.ob-golden-ring-3 {
+  position: absolute;
+  width: 280px; height: 280px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 180, 0, 0.22);
+  animation: obGoldenRing 3.6s cubic-bezier(0.05, 0.6, 0.2, 1) 0.55s forwards;
+}
+
+@keyframes obGoldenText {
+  0%   { opacity: 0; transform: translateY(14px); }
+  18%  { opacity: 1; transform: translateY(0); }
+  82%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-8px); }
+}
+.ob-golden-text { animation: obGoldenText 3.8s ease-in-out forwards; }
+
+/* ── 아웃트로 최종 암전 ── */
+@keyframes obDarkFade {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+.ob-dark-fade { animation: obDarkFade 1.8s ease-in forwards; }
+
+/* 입력창 자동완성 배경 덮어쓰기 (다크 모드) */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #111111 inset;
+  -webkit-text-fill-color: #FFFFFF;
+  transition: background-color 5000s ease-in-out 0s;
+}
