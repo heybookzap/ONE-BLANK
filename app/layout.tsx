@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import GateGuard from "@/components/GateGuard";
 
 export const metadata: Metadata = {
   title: "ONE BLANK",
@@ -15,7 +14,8 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="min-h-screen bg-[#111111] text-white antialiased">
-        <GateGuard>{children}</GateGuard>
+        {/* 아래 한 줄이 핵심입니다! */}
+        {children}
       </body>
     </html>
   );
