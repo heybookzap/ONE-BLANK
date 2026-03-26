@@ -14,22 +14,19 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         model: "claude-3-haiku-20240307",
         max_tokens: 150,
-        system: "당신은 생산성 디렉터입니다. 사용자의 최악의 습관과 현재 감정을 분석하여 극복을 위한 행동을 3개 제안하세요. 단, 반드시 '타이머를 켜고 25분 동안 집중해서 끝낼 수 있는 구체적인 분량과 난이도의 생산적 작업(예: 기획안 뼈대 5줄 작성하기, 1주일치 콘텐츠 주제 리스트업 등)'이어야 합니다. 단순한 스트레칭이나 전원 끄기 같은 즉각적 행동은 제외하세요. 각 행동은 20자 이내로 명확하게 작성하며, JSON 형식의 문자열 배열로만 응답하세요. 예: [\"랜딩페이지 카피 초안 작성하기\", \"고객 인터뷰 질문지 기획하기\", \"경쟁사 분석 리서치 진행하기\"]",
-        messages: [
-          {
-            role: "user",
-            content: `최악의 습관: ${worstHabit}\n현재 감정/상태: ${drainText}\n\n위 내용을 바탕으로 25분간 집중할 3가지 행동을 JSON 배열로만 반환해.`
-          }
-        ]
+        system: `당신은 생산성 디렉터입니다. 사용자가 지우고 싶어하는 습관(worstHabit)과 현재의 감정 상태(drainText)를 분석하세요.
+        이 습관을 지우기 위해 '25분 동안 즉시 몰입할 수 있는 구체적인 행동' 3가지를 추천하세요. 
+        각 추천은 반드시 그 습관을 원천 차단하거나 반대되는 생산적 업무여야 합니다. 
+        매일 새로운 관점을 제공할 수 있도록 유동적으로 생각하세요. JSON 배열로만 응답하세요.`,
+        messages: [{ role: "user", content: `지워야 할 습관: ${worstHabit}\n현재 상태: ${drainText}\n\n이 습관을 깨부술 25분 몰입 업무 3가지를 JSON 배열로 반환해.` }]
       })
     });
 
     const data = await response.json();
-    const content = data.content[0].text;
-    const suggestions = JSON.parse(content);
+    const suggestions = JSON.parse(data.content[0].text);
 
     return NextResponse.json({ suggestions });
   } catch (error) {
-    return NextResponse.json({ suggestions: ["오늘 처리할 핵심 업무 1가지 구조 짜기", "가장 미뤄둔 문서 작업 25분간 진행하기", "목표 달성을 위한 아이디어 10개 적기"] });
+    return NextResponse.json({ suggestions: ["오늘의 핵심 과업 1순위 문서화하기", "미뤄둔 기획안 뼈대 25분간 잡기", "방해 요소 차단하고 핵심 로직 설계하기"] });
   }
 }

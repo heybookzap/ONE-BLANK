@@ -8,10 +8,10 @@ import ROISection from "./components/ROISection";
 import { supabase } from "./lib/supabase";
 
 const ENDING_MESSAGES = [
-  "가장 무거운 바위를\n치워냈습니다.",
   "오늘 하루의 주도권은\n이제 당신의 것입니다.",
   "완벽한 통제.\n오늘 첫 승리를 쟁취하셨습니다.",
-  "세상의 소음이\n당신을 건드릴 수 없는 상태입니다."
+  "세상의 소음이\n당신을 건드릴 수 없는 상태입니다.",
+  "가장 무거운 바위를\n기어코 치워냈습니다."
 ];
 
 export default function Dashboard() {
@@ -21,7 +21,6 @@ export default function Dashboard() {
   const [isOnboarding, setIsOnboarding] = useState(true);
   const [worstHabit, setWorstHabit] = useState(""); 
   const [liveOnes, setLiveOnes] = useState(0);
-  
   const [isAILoading, setIsAILoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [currentSuggestions, setCurrentSuggestions] = useState<string[]>([]);
@@ -42,13 +41,10 @@ export default function Dashboard() {
       if (!AudioContext) return;
       const ctx = new AudioContext();
       if (ctx.state === 'suspended') ctx.resume();
-      
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      
       osc.connect(gain);
       gain.connect(ctx.destination);
-      
       if (type === "start") {
         osc.type = "square";
         osc.frequency.setValueAtTime(600, ctx.currentTime);
@@ -79,20 +75,17 @@ export default function Dashboard() {
   const handleAIRecommend = async () => {
     setIsAILoading(true);
     setShowSuggestions(false);
-    
     const drainText = localStorage.getItem("ob_drain_text") || "복잡한 감정 상태";
-
     try {
       const response = await fetch("/api/recommend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ worstHabit, drainText })
       });
-      
       const data = await response.json();
       setCurrentSuggestions(data.suggestions);
     } catch (error) {
-      setCurrentSuggestions(["가장 중요한 핵심 문서 25분간 작성", "목표 달성을 위한 리서치 25분 진행", "아이디어 구체화 기획안 작성"]);
+      setCurrentSuggestions(["가장 중요한 문서 25분 작성", "핵심 기획안 뼈대 잡기", "데이터 정리 및 분석 진행"]);
     } finally {
       setIsAILoading(false);
       setShowSuggestions(true);
@@ -101,32 +94,21 @@ export default function Dashboard() {
 
   const handleCalculateROI = async (seconds: number) => {
     playSound("end");
-    
     const hourlyRate = Number(localStorage.getItem("ob_rate") || "0");
     const sessionValue = Math.floor((hourlyRate / 3600) * seconds);
     const sessionMinutes = Math.floor(seconds / 60);
     const prevValue = Number(localStorage.getItem("ob_total_saving") || "0");
     const prevMins = Number(localStorage.getItem("ob_total_time") || "0");
-    
     const newTotalValue = prevValue + sessionValue;
     const newTotalMinutes = prevMins + sessionMinutes;
-
     localStorage.setItem("ob_total_saving", newTotalValue.toString());
     localStorage.setItem("ob_total_time", newTotalMinutes.toString());
     setSessionData({ sessionValue, totalValue: newTotalValue, totalMinutes: newTotalMinutes });
-    
-    let userId = localStorage.getItem("ob_user_id");
-    if (!userId) {
-      userId = "user_" + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem("ob_user_id", userId);
-    }
-
+    let userId = localStorage.getItem("ob_user_id") || "user_" + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem("ob_user_id", userId);
     try {
-      await supabase.from('sessions').insert([
-        { user_id: userId, one_thing: oneThing, focus_minutes: sessionMinutes, earned_value: sessionValue }
-      ]);
+      await supabase.from('sessions').insert([{ user_id: userId, one_thing: oneThing, focus_minutes: sessionMinutes, earned_value: sessionValue }]);
     } catch (err) {}
-
     setPhase("roi");
   };
 
@@ -142,7 +124,6 @@ export default function Dashboard() {
             </div>
           )}
           {phase === "drain" && <EmotionDrainSection onComplete={() => setPhase("onething")} />}
-          
           {phase === "onething" && (
             <div className="w-full max-w-3xl animate-fade-in flex flex-col items-center">
               <div className="mb-20 space-y-4">
@@ -150,38 +131,25 @@ export default function Dashboard() {
                 <h2 className="text-xl font-light text-[#DAA520] tracking-tight">[{worstHabit}]</h2>
               </div>
               <h2 className="text-2xl font-light text-white mb-10 tracking-tight">이 습관을 지우기 위한 오늘의 목표는?</h2>
-              
               <form onSubmit={handleStartTimer} className="w-full relative max-w-lg mb-8">
                 <input type="text" value={oneThing} onChange={(e) => setOneThing(e.target.value)} className="w-full bg-transparent border-b border-[#333] text-white text-2xl font-extralight py-6 text-center focus:outline-none focus:border-[#DAA520] transition-all" placeholder="단 하나의 본질" autoFocus />
                 <button type="submit" className="absolute right-0 top-1/2 -translate-y-1/2 text-[10px] text-[#E0E0E0] tracking-[0.3em] hover:text-[#DAA520] uppercase transition-colors pb-1">[ ENTER ]</button>
               </form>
-
               <div className="w-full max-w-lg flex flex-col items-center min-h-[100px]">
                 {!showSuggestions && !isAILoading && (
-                  <button onClick={handleAIRecommend} className="text-[10px] text-[#A0A0A0] tracking-[0.3em] border border-[#333] px-6 py-2 rounded-full hover:bg-[#111] transition-all">
-                    [ AI 디렉터의 행동 제안 받기 ]
-                  </button>
+                  <button onClick={handleAIRecommend} className="text-[10px] text-[#A0A0A0] tracking-[0.3em] border border-[#333] px-6 py-2 rounded-full hover:bg-[#111] transition-all">[ AI 디렉터의 행동 제안 받기 ]</button>
                 )}
-                {isAILoading && (
-                  <p className="text-[10px] text-[#DAA520] tracking-[0.4em] animate-pulse uppercase">AI Analyzing Context...</p>
-                )}
+                {isAILoading && <p className="text-[10px] text-[#DAA520] tracking-[0.4em] animate-pulse uppercase">AI Analyzing Context...</p>}
                 {showSuggestions && (
                   <div className="w-full flex flex-col gap-2 animate-fade-in">
                     {currentSuggestions.map((suggestion, idx) => (
-                      <button 
-                        key={idx}
-                        onClick={() => setOneThing(suggestion)}
-                        className="w-full text-left text-sm text-[#E0E0E0] font-light bg-[#111] border border-[#222] p-4 hover:border-[#DAA520] transition-all"
-                      >
-                        {suggestion}
-                      </button>
+                      <button key={idx} onClick={() => setOneThing(suggestion)} className="w-full text-left text-sm text-[#E0E0E0] font-light bg-[#111] border border-[#222] p-4 hover:border-[#DAA520] transition-all">{suggestion}</button>
                     ))}
                   </div>
                 )}
               </div>
             </div>
           )}
-
           {phase === "timer" && (
             <div className="w-full animate-fade-in flex flex-col items-center">
               <div className="mb-16 flex flex-col items-center">
@@ -200,40 +168,17 @@ export default function Dashboard() {
               <p className="text-[12px] text-[#A0A0A0] tracking-[0.5em] uppercase mb-6">Value Secured Today</p>
               <h1 className="text-6xl font-extralight text-[#DAA520] mb-8 tracking-tighter">₩ {sessionData.sessionValue.toLocaleString()}</h1>
               <ROISection totalValue={sessionData.totalValue} totalMinutes={sessionData.totalMinutes} />
-              <button 
-                onClick={() => {
-                  const freshMessage = ENDING_MESSAGES[Math.floor(Math.random() * ENDING_MESSAGES.length)];
-                  setFinalMessage(freshMessage);
-                  setPhase("final");
-                }} 
-                className="mt-20 text-[10px] text-[#E0E0E0] hover:text-[#DAA520] transition-all uppercase tracking-[0.5em]"
-              >
-                [ 자산 확인 완료 ]
-              </button>
+              <button onClick={() => { setFinalMessage(ENDING_MESSAGES[Math.floor(Math.random() * ENDING_MESSAGES.length)]); setPhase("final"); }} className="mt-20 text-[10px] text-[#E0E0E0] hover:text-[#DAA520] transition-all uppercase tracking-[0.5em]">[ 자산 확인 완료 ]</button>
             </div>
           )}
           {phase === "final" && (
             <div className="w-full max-w-3xl animate-fade-in flex flex-col items-center space-y-12">
               <p className="text-[10px] tracking-[0.8em] text-[#DAA520] uppercase font-light">Mission Accomplished</p>
-              <h1 className="text-3xl md:text-4xl font-light text-white leading-tight whitespace-pre-line">
-                {finalMessage}
-              </h1>
+              <h1 className="text-3xl md:text-4xl font-light text-white leading-tight whitespace-pre-line">{finalMessage}</h1>
               <div className="py-10 border-y border-[#111] w-full max-w-md">
                 <p className="text-sm font-extralight leading-[2.2] text-[#E0E0E0] tracking-wide">세상의 소음을 차단하고, 기어코 오늘 하루의<br />주도권을 쥐어낸 당신을 존경합니다.</p>
               </div>
-              <button 
-                onClick={() => {
-                  const overlay = document.createElement('div');
-                  overlay.style.position = 'fixed'; overlay.style.inset = '0'; overlay.style.backgroundColor = 'black'; 
-                  overlay.style.zIndex = '9999'; overlay.style.transition = 'opacity 3s ease'; overlay.style.opacity = '0';
-                  document.body.appendChild(overlay);
-                  setTimeout(() => { overlay.style.opacity = '1'; }, 50);
-                  setTimeout(() => { setPhase("closed"); }, 3000);
-                }}
-                className="px-20 py-7 border border-[#333] text-[10px] tracking-[0.6em] text-[#E0E0E0] hover:text-[#DAA520] hover:border-[#DAA520] transition-all uppercase"
-              >
-                [ ⬛ 시스템 종료 및 자유 시간 시작 ]
-              </button>
+              <button onClick={() => { const overlay = document.createElement('div'); overlay.style.position = 'fixed'; overlay.style.inset = '0'; overlay.style.backgroundColor = 'black'; overlay.style.zIndex = '9999'; overlay.style.transition = 'opacity 3s ease'; overlay.style.opacity = '0'; document.body.appendChild(overlay); setTimeout(() => { overlay.style.opacity = '1'; }, 50); setTimeout(() => { setPhase("closed"); }, 3000); }} className="px-20 py-7 border border-[#333] text-[10px] tracking-[0.6em] text-[#E0E0E0] hover:text-[#DAA520] hover:border-[#DAA520] transition-all uppercase">[ ⬛ 시스템 종료 및 자유 시간 시작 ]</button>
             </div>
           )}
           {phase === "closed" && <div className="min-h-screen bg-black" />}

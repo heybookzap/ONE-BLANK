@@ -11,6 +11,7 @@ export default function EmotionDrainSection({ onComplete }: { onComplete: () => 
     e.preventDefault();
     if (!drainText.trim()) return;
 
+    const worstHabit = localStorage.getItem("ob_worst_habit") || "이름 없는 습관";
     localStorage.setItem("ob_drain_text", drainText);
     setIsWashing(true);
 
@@ -18,7 +19,7 @@ export default function EmotionDrainSection({ onComplete }: { onComplete: () => 
       const res = await fetch("/api/comfort", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ drainText })
+        body: JSON.stringify({ drainText, worstHabit })
       });
       const data = await res.json();
       setComfortMessage(data.message);
@@ -29,7 +30,7 @@ export default function EmotionDrainSection({ onComplete }: { onComplete: () => 
       setIsComplete(true);
       setTimeout(() => {
         onComplete();
-      }, 6000);
+      }, 7000);
     }
   };
 
@@ -48,7 +49,7 @@ export default function EmotionDrainSection({ onComplete }: { onComplete: () => 
     return (
       <div className="w-full flex flex-col items-center">
         <div className="w-8 h-8 border-t border-[#DAA520] rounded-full animate-spin mb-6"></div>
-        <p className="text-[10px] text-[#A0A0A0] tracking-[0.4em] uppercase">Cleaning your emotional noise...</p>
+        <p className="text-[10px] text-[#A0A0A0] tracking-[0.4em] uppercase">Processing your noise...</p>
       </div>
     );
   }
@@ -57,7 +58,7 @@ export default function EmotionDrainSection({ onComplete }: { onComplete: () => 
     <div className="w-full max-w-2xl animate-fade-in flex flex-col items-center text-center px-4">
       <p className="text-[10px] text-[#DAA520] tracking-[0.5em] uppercase mb-10 opacity-70">Emotion Drain</p>
       <h2 className="text-2xl font-light text-white mb-12 tracking-tight leading-relaxed whitespace-pre-line">
-        지금 당신의 머릿속을{"\n"}어지럽히는 감정이나 소음은 무엇입니까?
+        지금 당신의 머릿속을 어지럽히는{"\n"}감정이나 소음은 무엇입니까?
       </h2>
       <form onSubmit={handleDrain} className="w-full relative">
         <input
