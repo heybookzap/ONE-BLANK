@@ -184,7 +184,14 @@ export default function Dashboard() {
 
           {phase === "timer" && (
             <div className="w-full animate-fade-in flex flex-col items-center">
-              <p className="text-[10px] text-white tracking-[0.5em] uppercase mb-10 font-medium">Current Focus: {oneThing}</p>
+              <div className="mb-16 flex flex-col items-center">
+                <p className="text-[9px] text-[#A0A0A0] tracking-[0.6em] uppercase mb-4 opacity-80">Current Focus</p>
+                <div className="px-6 py-2 border-x border-[#222] relative">
+                  <div className="absolute top-0 left-0 w-2 h-[1px] bg-[#DAA520]" />
+                  <div className="absolute bottom-0 right-0 w-2 h-[1px] bg-[#DAA520]" />
+                  <h3 className="text-xl md:text-2xl font-light text-[#DAA520] tracking-tight">{oneThing}</h3>
+                </div>
+              </div>
               <PomodoroSection onSessionComplete={handleCalculateROI} />
             </div>
           )}
@@ -193,8 +200,6 @@ export default function Dashboard() {
               <p className="text-[12px] text-[#A0A0A0] tracking-[0.5em] uppercase mb-6">Value Secured Today</p>
               <h1 className="text-6xl font-extralight text-[#DAA520] mb-8 tracking-tighter">₩ {sessionData.sessionValue.toLocaleString()}</h1>
               <ROISection totalValue={sessionData.totalValue} totalMinutes={sessionData.totalMinutes} />
-              
-              {/* 🎯 이 버튼을 누를 때마다 무조건 랜덤 문구를 새로 뽑도록 수정했습니다 */}
               <button 
                 onClick={() => {
                   const freshMessage = ENDING_MESSAGES[Math.floor(Math.random() * ENDING_MESSAGES.length)];
