@@ -7,6 +7,13 @@ import PomodoroSection from "./components/PomodoroSection";
 import ROISection from "./components/ROISection";
 import { supabase } from "./lib/supabase";
 
+const ENDING_MESSAGES = [
+  "가장 무거운 바위를\n치워냈습니다.",
+  "오늘 하루의 주도권은\n이제 당신의 것입니다.",
+  "완벽한 통제.\n오늘 첫 승리를 쟁취하셨습니다.",
+  "세상의 소음이\n당신을 건드릴 수 없는 상태입니다."
+];
+
 export default function Dashboard() {
   const [phase, setPhase] = useState<"drain" | "onething" | "timer" | "roi" | "final" | "closed">("drain");
   const [oneThing, setOneThing] = useState("");
@@ -14,6 +21,11 @@ export default function Dashboard() {
   const [isOnboarding, setIsOnboarding] = useState(true);
   const [worstHabit, setWorstHabit] = useState(""); 
   const [liveOnes, setLiveOnes] = useState(0);
+  
+  const [isAILoading, setIsAILoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [currentSuggestions, setCurrentSuggestions] = useState<string[]>([]);
+  const [finalMessage, setFinalMessage] = useState("");
 
   useEffect(() => {
     setLiveOnes(Math.floor(Math.random() * 8));
@@ -22,9 +34,73 @@ export default function Dashboard() {
       setIsOnboarding(false);
       setWorstHabit(localStorage.getItem("ob_worst_habit") || "");
     }
+    setFinalMessage(ENDING_MESSAGES[Math.floor(Math.random() * ENDING_MESSAGES.length)]);
   }, [isOnboarding]);
 
+  const playSound = (type: "start" | "end") => {
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      if (type === "start") {
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.3);
+      } else {
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(400, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 1.5);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.5);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 1.5);
+      }
+    } catch (e) {}
+  };
+
+  const handleStartTimer = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (oneThing) {
+      playSound("start");
+      setPhase("timer");
+    }
+  };
+
+  const handleAIRecommend = async () => {
+    setIsAILoading(true);
+    setShowSuggestions(false);
+    
+    const drainText = localStorage.getItem("ob_drain_text") || "복잡한 감정 상태";
+
+    try {
+      const response = await fetch("/api/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ worstHabit, drainText })
+      });
+      
+      const data = await response.json();
+      setCurrentSuggestions(data.suggestions);
+    } catch (error) {
+      setCurrentSuggestions(["스마트폰 전원 끄기", "심호흡 3번 하기", "당장 자리에서 일어나기"]);
+    } finally {
+      setIsAILoading(false);
+      setShowSuggestions(true);
+    }
+  };
+
   const handleCalculateROI = async (seconds: number) => {
+    playSound("end");
+    
     const hourlyRate = Number(localStorage.getItem("ob_rate") || "0");
     const sessionValue = Math.floor((hourlyRate / 3600) * seconds);
     const sessionMinutes = Math.floor(seconds / 60);
@@ -53,9 +129,7 @@ export default function Dashboard() {
           earned_value: sessionValue
         }
       ]);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) {}
 
     setPhase("roi");
   };
@@ -74,19 +148,46 @@ export default function Dashboard() {
             </div>
           )}
           {phase === "drain" && <EmotionDrainSection onComplete={() => setPhase("onething")} />}
+          
           {phase === "onething" && (
             <div className="w-full max-w-3xl animate-fade-in flex flex-col items-center">
               <div className="mb-20 space-y-4">
                 <p className="text-[9px] text-[#DAA520] tracking-[0.6em] uppercase opacity-70">Target Habit to Erase</p>
                 <h2 className="text-xl font-light text-[#DAA520] tracking-tight">[{worstHabit}]</h2>
               </div>
-              <h2 className="text-2xl font-light text-white mb-16 tracking-tight">이 습관을 지우기 위한 오늘의 목표는?</h2>
-              <form onSubmit={(e) => { e.preventDefault(); if(oneThing) setPhase("timer"); }} className="w-full relative max-w-lg mb-12">
-                <input type="text" value={oneThing} onChange={(e) => setOneThing(e.target.value)} className="w-full bg-transparent border-b border-[#333] text-white text-2xl font-extralight py-8 text-center focus:outline-none focus:border-[#DAA520] transition-all" placeholder="단 하나의 본질" autoFocus />
+              <h2 className="text-2xl font-light text-white mb-10 tracking-tight">이 습관을 지우기 위한 오늘의 목표는?</h2>
+              
+              <form onSubmit={handleStartTimer} className="w-full relative max-w-lg mb-8">
+                <input type="text" value={oneThing} onChange={(e) => setOneThing(e.target.value)} className="w-full bg-transparent border-b border-[#333] text-white text-2xl font-extralight py-6 text-center focus:outline-none focus:border-[#DAA520] transition-all" placeholder="단 하나의 본질" autoFocus />
                 <button type="submit" className="absolute right-0 top-1/2 -translate-y-1/2 text-[10px] text-[#E0E0E0] tracking-[0.3em] hover:text-[#DAA520] uppercase transition-colors pb-1">[ ENTER ]</button>
               </form>
+
+              <div className="w-full max-w-lg flex flex-col items-center min-h-[100px]">
+                {!showSuggestions && !isAILoading && (
+                  <button onClick={handleAIRecommend} className="text-[10px] text-[#A0A0A0] tracking-[0.3em] border border-[#333] px-6 py-2 rounded-full hover:bg-[#111] transition-all">
+                    [ AI 디렉터의 행동 제안 받기 ]
+                  </button>
+                )}
+                {isAILoading && (
+                  <p className="text-[10px] text-[#DAA520] tracking-[0.4em] animate-pulse uppercase">AI Analyzing Context...</p>
+                )}
+                {showSuggestions && (
+                  <div className="w-full flex flex-col gap-2 animate-fade-in">
+                    {currentSuggestions.map((suggestion, idx) => (
+                      <button 
+                        key={idx}
+                        onClick={() => setOneThing(suggestion)}
+                        className="w-full text-left text-sm text-[#E0E0E0] font-light bg-[#111] border border-[#222] p-4 hover:border-[#DAA520] transition-all"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
+
           {phase === "timer" && (
             <div className="w-full animate-fade-in flex flex-col items-center">
               <p className="text-[10px] text-white tracking-[0.5em] uppercase mb-10 font-medium">Current Focus: {oneThing}</p>
@@ -104,7 +205,9 @@ export default function Dashboard() {
           {phase === "final" && (
             <div className="w-full max-w-3xl animate-fade-in flex flex-col items-center space-y-12">
               <p className="text-[10px] tracking-[0.8em] text-[#DAA520] uppercase font-light">Mission Accomplished</p>
-              <h1 className="text-3xl md:text-4xl font-light text-white leading-tight">가장 무거운 바위를<br />치워냈습니다.</h1>
+              <h1 className="text-3xl md:text-4xl font-light text-white leading-tight whitespace-pre-line">
+                {finalMessage}
+              </h1>
               <div className="py-10 border-y border-[#111] w-full max-w-md">
                 <p className="text-sm font-extralight leading-[2.2] text-[#E0E0E0] tracking-wide">세상의 소음을 차단하고, 기어코 오늘 하루의<br />주도권을 쥐어낸 당신을 존경합니다.</p>
               </div>
