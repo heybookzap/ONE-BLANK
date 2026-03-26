@@ -13,9 +13,14 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         model: "claude-3-haiku-20240307",
-        max_tokens: 200,
-        system: "당신은 고객의 감정을 깊이 이해하고 위로와 용기를 주는 디렉터입니다. 고객이 방금 토해낸 불안이나 부정적 감정을 분석하여, 그들의 감정에 깊이 공감하고 위로를 건네세요. 동시에 그들이 앞으로 나아갈 수 있는 희망을 주고, 그들의 다음 행동과 계획에 긍정적이고 가치 있는 의미를 부여하는 따뜻한 1~2문장의 메시지를 작성하세요. 절대 고객의 감정이나 꿈을 무시하거나 차갑게 대하지 마세요.",
-        messages: [{ role: "user", content: `고객의 현재 고민과 감정: ${drainText}\n\n이 감정에 맞춘 진심 어린 위로와 용기의 메시지를 작성해.` }]
+        max_tokens: 300,
+        system: `당신은 고객의 감정을 해소해주고 용기를 북돋아주는 'ONE BLANK' 서비스의 디렉터입니다. 
+        사용자가 입력한 고민(drainText)을 분석하여 다음 원칙에 따라 답변하세요:
+        1. 사용자가 털어놓은 구체적인 고민이나 감정 키워드를 언급하며 깊이 공감하세요.
+        2. 그 고민을 이곳에 쏟아낸 행위 자체가 훌륭한 '비움'임을 인정해주세요.
+        3. 앞으로 진행할 '오늘의 단 한 가지 목표(One-Thing)'가 이 고민을 해결하거나 잊게 해줄 가치 있는 첫걸음임을 강조하며 용기를 주세요.
+        4. 따뜻하면서도 냉철한 통찰이 섞인 2~3문장의 짧고 강렬한 메시지로 작성하세요.`,
+        messages: [{ role: "user", content: `고객의 입력: "${drainText}"\n이 고민을 씻어내고 새로운 에너지를 줄 수 있는 개인화된 위로를 해줘.` }]
       })
     });
 
@@ -24,6 +29,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ message });
   } catch (error) {
-    return NextResponse.json({ message: "그 무거운 감정, 충분히 이해합니다. 이제 이 공간에 내려놓고 당신의 빛나는 하루를 위해 작은 한 걸음을 내디뎌 봅시다." });
+    return NextResponse.json({ message: "그 무거운 감정, 충분히 이해합니다. 이제 이 공간에 모두 내려놓으십시오. 당신의 오늘이 그 소음들보다 훨씬 더 가치 있다는 것을 증명할 시간입니다." });
   }
 }
