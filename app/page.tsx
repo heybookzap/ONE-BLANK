@@ -176,7 +176,7 @@ export default function Dashboard() {
               <p className="text-[10px] tracking-[0.8em] text-[#DAA520] uppercase font-light">Mission Accomplished</p>
               <h1 className="text-3xl md:text-4xl font-light text-white leading-tight whitespace-pre-line">{finalMessage}</h1>
               <div className="py-10 border-y border-[#111] w-full max-w-md">
-                <p className="text-sm font-extralight leading-[2.2] text-[#E0E0E0] tracking-wide">세상의 소음을 차단하고, 기어코 오늘 하루의<br />주도권을 쥐어낸 당신을 존경합니다.</p>
+                <p className="text-sm font-extralight leading-[2.2] text-[#E0E0E0] tracking-wide">세상의 소음을 차단하고, 기어코 오늘 하루의<br />주도권을 쥐어낸 당신을 응원합니다.</p>
               </div>
               <button onClick={() => { const overlay = document.createElement('div'); overlay.style.position = 'fixed'; overlay.style.inset = '0'; overlay.style.backgroundColor = 'black'; overlay.style.zIndex = '9999'; overlay.style.transition = 'opacity 3s ease'; overlay.style.opacity = '0'; document.body.appendChild(overlay); setTimeout(() => { overlay.style.opacity = '1'; }, 50); setTimeout(() => { setPhase("closed"); }, 3000); }} className="px-20 py-7 border border-[#333] text-[10px] tracking-[0.6em] text-[#E0E0E0] hover:text-[#DAA520] hover:border-[#DAA520] transition-all uppercase">[ ⬛ 시스템 종료 및 자유 시간 시작 ]</button>
             </div>
