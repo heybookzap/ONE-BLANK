@@ -34,7 +34,13 @@ export default function Dashboard() {
       setIsOnboarding(false);
       setWorstHabit(localStorage.getItem("ob_worst_habit") || "");
     }
-    setFinalMessage(ENDING_MESSAGES[Math.floor(Math.random() * ENDING_MESSAGES.length)]);
+    
+    const lastMsg = localStorage.getItem("ob_last_msg");
+    let availableMsgs = ENDING_MESSAGES.filter(m => m !== lastMsg);
+    if (availableMsgs.length === 0) availableMsgs = ENDING_MESSAGES;
+    const chosen = availableMsgs[Math.floor(Math.random() * availableMsgs.length)];
+    setFinalMessage(chosen);
+    localStorage.setItem("ob_last_msg", chosen);
   }, [isOnboarding]);
 
   const playSound = (type: "start" | "end") => {
@@ -42,6 +48,11 @@ export default function Dashboard() {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioContext) return;
       const ctx = new AudioContext();
+      
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       
@@ -49,20 +60,20 @@ export default function Dashboard() {
       gain.connect(ctx.destination);
       
       if (type === "start") {
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(800, ctx.currentTime);
-        gain.gain.setValueAtTime(0.1, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+        osc.type = "square";
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        gain.gain.setValueAtTime(0.5, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
         osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.3);
+        osc.stop(ctx.currentTime + 0.2);
       } else {
-        osc.type = "triangle";
+        osc.type = "sine";
         osc.frequency.setValueAtTime(400, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 1.5);
-        gain.gain.setValueAtTime(0.2, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.5);
+        osc.frequency.exponentialRampToValueAtTime(1000, ctx.currentTime + 1.0);
+        gain.gain.setValueAtTime(0.5, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.0);
         osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 1.5);
+        osc.stop(ctx.currentTime + 1.0);
       }
     } catch (e) {}
   };
