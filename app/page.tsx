@@ -34,13 +34,6 @@ export default function Dashboard() {
       setIsOnboarding(false);
       setWorstHabit(localStorage.getItem("ob_worst_habit") || "");
     }
-    
-    const lastMsg = localStorage.getItem("ob_last_msg");
-    let availableMsgs = ENDING_MESSAGES.filter(m => m !== lastMsg);
-    if (availableMsgs.length === 0) availableMsgs = ENDING_MESSAGES;
-    const chosen = availableMsgs[Math.floor(Math.random() * availableMsgs.length)];
-    setFinalMessage(chosen);
-    localStorage.setItem("ob_last_msg", chosen);
   }, [isOnboarding]);
 
   const playSound = (type: "start" | "end") => {
@@ -48,10 +41,7 @@ export default function Dashboard() {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioContext) return;
       const ctx = new AudioContext();
-      
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
+      if (ctx.state === 'suspended') ctx.resume();
       
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -102,7 +92,7 @@ export default function Dashboard() {
       const data = await response.json();
       setCurrentSuggestions(data.suggestions);
     } catch (error) {
-      setCurrentSuggestions(["스마트폰 전원 끄기", "심호흡 3번 하기", "당장 자리에서 일어나기"]);
+      setCurrentSuggestions(["가장 중요한 핵심 문서 25분간 작성", "목표 달성을 위한 리서치 25분 진행", "아이디어 구체화 기획안 작성"]);
     } finally {
       setIsAILoading(false);
       setShowSuggestions(true);
@@ -133,26 +123,19 @@ export default function Dashboard() {
 
     try {
       await supabase.from('sessions').insert([
-        { 
-          user_id: userId, 
-          one_thing: oneThing, 
-          focus_minutes: sessionMinutes, 
-          earned_value: sessionValue
-        }
+        { user_id: userId, one_thing: oneThing, focus_minutes: sessionMinutes, earned_value: sessionValue }
       ]);
     } catch (err) {}
 
     setPhase("roi");
   };
 
-  if (phase === "closed") return <div className="min-h-screen bg-black" />;
-
   return (
     <GateGuard>
       {isOnboarding && <OnboardingModal onComplete={() => { setIsOnboarding(false); setWorstHabit(localStorage.getItem("ob_worst_habit") || ""); }} />}
       {!isOnboarding && (
         <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans text-center">
-          {phase !== "final" && (
+          {phase !== "final" && phase !== "closed" && (
             <div className="absolute top-10 left-10 flex items-center gap-3 px-4 py-2 bg-[#111]/90 border border-[#222] rounded-full z-20 pointer-events-none">
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
               <p className="text-[8px] text-[#A0A0A0] tracking-widest uppercase font-light"><span className="text-white font-medium mr-1">{liveOnes}</span> Ones Focusing</p>
@@ -210,7 +193,18 @@ export default function Dashboard() {
               <p className="text-[12px] text-[#A0A0A0] tracking-[0.5em] uppercase mb-6">Value Secured Today</p>
               <h1 className="text-6xl font-extralight text-[#DAA520] mb-8 tracking-tighter">₩ {sessionData.sessionValue.toLocaleString()}</h1>
               <ROISection totalValue={sessionData.totalValue} totalMinutes={sessionData.totalMinutes} />
-              <button onClick={() => setPhase("final")} className="mt-20 text-[10px] text-[#E0E0E0] hover:text-[#DAA520] transition-all uppercase tracking-[0.5em]">[ 자산 확인 완료 ]</button>
+              
+              {/* 🎯 이 버튼을 누를 때마다 무조건 랜덤 문구를 새로 뽑도록 수정했습니다 */}
+              <button 
+                onClick={() => {
+                  const freshMessage = ENDING_MESSAGES[Math.floor(Math.random() * ENDING_MESSAGES.length)];
+                  setFinalMessage(freshMessage);
+                  setPhase("final");
+                }} 
+                className="mt-20 text-[10px] text-[#E0E0E0] hover:text-[#DAA520] transition-all uppercase tracking-[0.5em]"
+              >
+                [ 자산 확인 완료 ]
+              </button>
             </div>
           )}
           {phase === "final" && (
@@ -237,6 +231,7 @@ export default function Dashboard() {
               </button>
             </div>
           )}
+          {phase === "closed" && <div className="min-h-screen bg-black" />}
         </div>
       )}
     </GateGuard>
