@@ -104,11 +104,18 @@ export default function Dashboard() {
     localStorage.setItem("ob_total_saving", newTotalValue.toString());
     localStorage.setItem("ob_total_time", newTotalMinutes.toString());
     setSessionData({ sessionValue, totalValue: newTotalValue, totalMinutes: newTotalMinutes });
-    let userId = localStorage.getItem("ob_user_id") || "user_" + Math.random().toString(36).substr(2, 9);
-    localStorage.setItem("ob_user_id", userId);
+
+    const userName = localStorage.getItem("ob_user_name") || "익명고스트";
+    const drainText = localStorage.getItem("ob_drain_text") || "기록 없음";
+    
     try {
-      await supabase.from('sessions').insert([{ user_id: userId, one_thing: oneThing, focus_minutes: sessionMinutes, earned_value: sessionValue }]);
+      await supabase.from('daily_logs').insert([{ 
+        user_name: userName, 
+        drain_text: drainText,
+        one_thing: oneThing 
+      }]);
     } catch (err) {}
+    
     setPhase("roi");
   };
 
