@@ -5,6 +5,7 @@ import OnboardingModal from "./components/OnboardingModal";
 import EmotionDrainSection from "./components/EmotionDrainSection";
 import PomodoroSection from "./components/PomodoroSection";
 import ROISection from "./components/ROISection";
+import SundayResetModal from "./components/SundayResetModal";
 import { supabase } from "./lib/supabase";
 
 const ENDING_MESSAGES = [
@@ -25,15 +26,32 @@ export default function Dashboard() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [currentSuggestions, setCurrentSuggestions] = useState<string[]>([]);
   const [finalMessage, setFinalMessage] = useState("");
+  const [showSundayModal, setShowSundayModal] = useState(false);
 
   useEffect(() => {
-    setLiveOnes(Math.floor(Math.random() * 8));
+    const activePool = [0, 0, 0, 0, 1, 1, 1, 1, 2, 3, 4, 5, 6, 7];
+    setLiveOnes(activePool[Math.floor(Math.random() * activePool.length)]);
+    
     const onboarded = localStorage.getItem("oneBlank_onboardingComplete");
+    
     if (onboarded) {
       setIsOnboarding(false);
       setWorstHabit(localStorage.getItem("ob_worst_habit") || "");
+
+      const today = new Date().getDay();
+      const lastReportDate = localStorage.getItem("ob_last_sunday_report");
+      const currentDateStr = new Date().toDateString();
+
+      if (today === 0 && lastReportDate !== currentDateStr) {
+        setShowSundayModal(true);
+      }
     }
   }, [isOnboarding]);
+
+  const handleCloseSundayModal = () => {
+    localStorage.setItem("ob_last_sunday_report", new Date().toDateString());
+    setShowSundayModal(false);
+  };
 
   const playSound = (type: "start" | "end") => {
     try {
@@ -75,7 +93,7 @@ export default function Dashboard() {
   const handleAIRecommend = async () => {
     setIsAILoading(true);
     setShowSuggestions(false);
-    const drainText = localStorage.getItem("ob_drain_text") || "복잡한 감정 상태";
+    const drainText = localStorage.getItem("ob_drain_text") || "기록 없음";
     try {
       const response = await fetch("/api/recommend", {
         method: "POST",
@@ -85,7 +103,11 @@ export default function Dashboard() {
       const data = await response.json();
       setCurrentSuggestions(data.suggestions);
     } catch (error) {
-      setCurrentSuggestions(["가장 중요한 문서 25분 작성", "핵심 기획안 뼈대 잡기", "데이터 정리 및 분석 진행"]);
+      setCurrentSuggestions([
+        "제일 무거운 일 하나만 끝내기", 
+        "복잡한 생각 버리고 첫 줄 쓰기", 
+        "미루고 싶던 일 25분만 하기"
+      ]);
     } finally {
       setIsAILoading(false);
       setShowSuggestions(true);
@@ -101,20 +123,31 @@ export default function Dashboard() {
     const prevMins = Number(localStorage.getItem("ob_total_time") || "0");
     const newTotalValue = prevValue + sessionValue;
     const newTotalMinutes = prevMins + sessionMinutes;
+    
     localStorage.setItem("ob_total_saving", newTotalValue.toString());
     localStorage.setItem("ob_total_time", newTotalMinutes.toString());
     setSessionData({ sessionValue, totalValue: newTotalValue, totalMinutes: newTotalMinutes });
 
-    const userName = localStorage.getItem("ob_user_name") || "익명고스트";
+    // --- [익명 ID 생성 로직 추가] ---
+    let anonymousId = localStorage.getItem("ob_anonymous_id");
+    if (!anonymousId) {
+      anonymousId = crypto.randomUUID(); // 겹치지 않는 고유 번호 생성
+      localStorage.setItem("ob_anonymous_id", anonymousId);
+    }
+    // ----------------------------
+
+    const userName = localStorage.getItem("ob_user_name") || "익명온스";
     const drainText = localStorage.getItem("ob_drain_text") || "기록 없음";
     
-    try {
-      await supabase.from('daily_logs').insert([{ 
-        user_name: userName, 
-        drain_text: drainText,
-        one_thing: oneThing 
-      }]);
-    } catch (err) {}
+    const { error: insertError } = await supabase.from('daily_logs').insert([{
+      user_id: anonymousId,
+      user_name: userName,
+      drain_text: drainText,
+      one_thing: oneThing
+    }]);
+    if (insertError) {
+      console.error("데이터 저장 실패:", insertError.message);
+    }
     
     setPhase("roi");
   };
@@ -124,12 +157,16 @@ export default function Dashboard() {
       {isOnboarding && <OnboardingModal onComplete={() => { setIsOnboarding(false); setWorstHabit(localStorage.getItem("ob_worst_habit") || ""); }} />}
       {!isOnboarding && (
         <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans text-center">
+          
+          {showSundayModal && <SundayResetModal onClose={handleCloseSundayModal} />}
+
           {phase !== "final" && phase !== "closed" && (
             <div className="absolute top-10 left-10 flex items-center gap-3 px-4 py-2 bg-[#111]/90 border border-[#222] rounded-full z-20 pointer-events-none">
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
               <p className="text-[8px] text-[#A0A0A0] tracking-widest uppercase font-light"><span className="text-white font-medium mr-1">{liveOnes}</span> Ones Focusing</p>
             </div>
           )}
+          
           {phase === "drain" && <EmotionDrainSection onComplete={() => setPhase("onething")} />}
           {phase === "onething" && (
             <div className="w-full max-w-3xl animate-fade-in flex flex-col items-center">
